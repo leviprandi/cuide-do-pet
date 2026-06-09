@@ -1,0 +1,40 @@
+# dependencies
+node_modules/
+
+# build outputs
+.next/
+dist/
+coverage/
+
+# environment
+.env
+.env.*
+!.env.example
+
+# logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# system files
+.DS_Store
+Thumbs.db
+
+# editor and temp files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.tmp/
+tmp/
+temp/
+
+# local runtime/state
+.run/
+
+# local audit artifacts
+PROJECT_SNAPSHOT.md
