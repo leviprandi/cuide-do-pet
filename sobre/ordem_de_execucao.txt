@@ -1,0 +1,23 @@
+contrato da IA
+
+schema Prisma
+
+módulo pets
+
+módulo events
+
+módulo expenses
+
+cálculos por kg e associação por espécie
+
+medications + schedules
+
+reminders
+
+ai.service
+
+chat flow
+
+documentos
+
+frontend

@@ -1,0 +1,156 @@
+1. Ambiente rodando de ponta a ponta
+
+Você precisa ter o básico funcionando:
+
+backend NestJS sobe
+
+banco conecta
+
+Prisma funciona
+
+.env configurado
+
+frontend sobe
+
+backend responde pelo menos um endpoint
+
+Se isso ainda não existe, essa é a prioridade zero.
+
+2. Schema Prisma implementado de verdade
+
+Se você já tem o schema desenhado no papel, agora precisa:
+
+criar schema.prisma
+
+gerar migrations
+
+subir o banco
+
+testar inserts reais
+
+Até isso acontecer, a arquitetura ainda não virou sistema.
+
+3. Módulos mínimos do backend
+
+Antes da IA completa, eu montaria estes módulos:
+
+pets
+
+events
+
+expenses
+
+medications
+
+reminders
+
+ai
+
+A IA que você definiu depende muito desses domínios existirem.
+
+4. ai.service.ts
+
+Você já tem o contrato técnico da IA em TypeScript, com AIIntent, AIInterpretationResult, AIEntities e AIDerivedData.
+O próximo passo direto é criar o serviço que usa isso:
+
+recebe mensagem do usuário
+
+chama a OpenAI
+
+força retorno no formato do contrato
+
+valida a resposta
+
+devolve AIInterpretationResult
+
+Esse é o primeiro pedaço “vivo” da IA.
+
+5. Prompt base da IA
+
+Você precisa criar o prompt que diz para a IA:
+
+quais intents existem
+
+quais campos retornar
+
+quando marcar requiresConfirmation
+
+como preencher missingFields
+
+que deve retornar JSON estruturado
+
+Sem isso, o contrato fica bonito no código, mas a IA não segue.
+
+6. Executor de intents no backend
+
+Depois da interpretação, o backend precisa decidir o que fazer.
+
+Exemplo:
+
+CREATE_EVENT → chama eventsService.create()
+
+REGISTER_EXPENSE → chama expensesService.create()
+
+REGISTER_MEDICATION_PLAN → chama medicationsService.createPlan()
+
+Hoje você já tem exemplos dessas interpretações definidos, como criação de evento, registro de gasto, abertura de pacote, plano de medicação, resumo veterinário e lembrete.
+Agora falta ligar isso à lógica real.
+
+7. Validação automática da IA
+
+Você já tem ótimos exemplos de saída esperada.
+O ideal agora é transformar isso em teste.
+
+Você precisa de:
+
+testes unitários do parser/validador
+
+testes do ai.service
+
+massa de mensagens reais
+
+comparação entre resultado esperado e resultado obtido
+
+8. Primeira vertical completa
+
+Em vez de construir tudo de uma vez, faça um fluxo inteiro.
+
+Eu faria nesta ordem:
+
+Vertical 1
+
+mensagem → interpretação → salvar evento
+
+frase: “Mia vomitou hoje”
+
+IA retorna CREATE_EVENT
+
+backend salva evento
+
+resposta volta ao usuário
+
+Vertical 2
+
+mensagem → interpretação → salvar gasto
+
+frase: “Comprei 15 kg de ração por 180 reais”
+
+IA retorna REGISTER_EXPENSE
+
+backend calcula preço por kg
+
+backend associa espécie/pets
+
+salva
+
+Vertical 3
+
+mensagem → interpretação → cronograma de medicamento
+
+frase com regra de doses
+
+IA retorna REGISTER_MEDICATION_PLAN
+
+backend gera agenda
+
+backend cria lembretes

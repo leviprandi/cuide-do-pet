@@ -1,0 +1,110 @@
+Como a página está organizada hoje:
+
+A página principal (page.tsx) atua como um container centralizado (maxWidth: 800px).
+
+O fluxo visual atual é sequencial por domínio: Pets (Lista + Formulário), Events (Lista + Formulário), Expenses (Lista + Formulário) e, por fim, AI Test.
+
+Dentro de cada domínio, há uma lista em cima, um divisor nativo (<hr>) e um formulário flexível em coluna (maxWidth: 420px) na parte inferior.
+
+Quais são os pontos visuais positivos:
+
+Clareza de estados: Os estados de loading, error, success e empty estão explícitos em texto, o que é excelente para UX e depuração.
+
+Uso de cores semânticas na IA: A tag de executionType (created, confirmation_required, unsupported) já usa cores contextuais (verde, amarelo, vermelho), o que guia o olhar perfeitamente.
+
+Formatação amigável: A conversão de datas para formato legível (pt-BR) e valores para .toFixed(2) melhora muito a leitura.
+
+Quais são os principais problemas visuais e de hierarquia:
+
+Falta de contraste entre leitura e ação: As listas de dados (<ul>) e os formulários de entrada têm o mesmo peso visual. O separador <hr> é fraco para delimitar essas duas áreas tão distintas.
+
+Ergonomia dos formulários: Atualmente, os formulários usam <label> envolvendo o texto e o <input> na mesma linha (inline). Em uma tela de 420px, isso espreme o input e dificulta a leitura.
+
+Densidade da IA: O retorno da IA em uma lista de definição (<dl>) fica muito longo verticalmente, o que empurra o botão de "Execute" ou as informações para longe do olhar do usuário.
+
+Baixo destaque de feedback: As mensagens de erro e sucesso aparecem como parágrafos normais de texto (<p>Error: ...</p>), dificultando a rápida percepção se a ação falhou ou funcionou.
+
+Proposta de refinamento visual
+Como reorganizar visualmente a página sem mudar a lógica:
+
+Diferenciação de fundo (Backgrounds): Mantenha as listas de leitura com fundo transparente (branco), mas envolva os blocos de formulário (<h3>Add...</h3> em diante) em um container com um fundo levemente cinza (ex: #f8f9fa), bordas arredondadas e um padding interno. Isso cria um "card de ação".
+
+Ergonomia de Inputs: Altere a estrutura do label para que o texto do campo fique acima do <input> (display: flex, flexDirection: column no próprio label), usando 100% da largura disponível.
+
+Feedback semântico: Aplique cores de texto nativas às mensagens de estado. Vermelho para createError e verde para createSuccess, encapsulados em uma caixa sutil de aviso.
+
+Como melhorar a legibilidade da área de IA:
+
+Como o executionType é o sinal principal, a badge colorida atual deve ficar maior e centralizada logo acima dos resultados.
+
+O campo missingFields precisa de um destaque visual urgente (ex: texto em vermelho ou itálico escuro) quando a intent exigir confirmação, para que o usuário saiba imediatamente o que faltou digitar.
+
+Transforme o bloco do <dl> em um grid simples de 2 colunas para campos curtos (intent, confidence, executed), economizando espaço vertical.
+
+Princípios visuais práticos
+Agrupamento (Gestalt): O formulário pertence ao seu domínio (Pet, Event, Expense). O uso do "Card Cinza" agrupa visualmente os inputs e o botão de salvar, separando-os da lista de dados históricos.
+
+Densidade Visual: Atualmente a densidade está alta nas listas. Transforme cada item da lista (<li>) em um bloco independente, com uma borda sutil (1px solid #eaeaea), padding interno (ex: 0.75rem) e margin-bottom (0.5rem). Isso transforma linhas de texto em "Cards de Registro" fáceis de escanear.
+
+Consistência de Ações: Os botões de ação ("Create", "Interpret", "Execute") devem ter a mesma linguagem visual. Destaque o botão primário (ex: "Execute" ou "Create") com cor de fundo, e deixe os secundários (ex: "Interpret") com fundo transparente e borda.
+
+Proposta de layout
+Estrutura geral da página:
+
+Header: <h1> centralizado e com margem inferior maior para respirar.
+
+AI Test Section: Como a IA é o diferencial do MVP, suba esta seção para o topo (logo abaixo do H1). O chat é a entrada principal de dados.
+
+Leitura vs Inserção: Abaixo da IA, liste os domínios (Pets, Events, Expenses). Para cada domínio:
+
+Título da seção (<h2>).
+
+"Cards" com os dados lidos (Listas estilizadas).
+
+Bloco de Formulário ("Card de Adição") no final da seção.
+
+O que deve ficar mais destacado:
+
+A área de input de IA e a badge do resultado da IA (executionType).
+
+O campo pricePerKg na lista de gastos, que é um diferencial do cálculo do backend.
+
+O que pode ficar mais discreto:
+
+IDs numéricos/UUIDs (petId, userId), que são importantes tecnicamente mas ruidosos visualmente. Reduza o tamanho da fonte e coloque em cinza claro.
+
+O que pode ser melhorado sem aumentar escopo
+Mudanças pequenas (Quick Wins):
+
+Adicionar cores (vermelho/verde) nas mensagens de <p>Error</p> e <p>Success</p> usando a propriedade style.
+
+Quebrar os labels em blocos para colocar o título acima do input.
+
+Transformar os <li> brutos em caixas (cards) com borda e espaçamento.
+
+Reordenar as importações do page.tsx para colocar o <AiTestSection /> logo abaixo do <h1>.
+
+Mudanças médias (Requer um pouco mais de CSS inline):
+
+Criar a estrutura de "Card Cinza" para envolver os formulários manuais de adição.
+
+Transformar a lista de atributos da IA (<dl>) em um grid inline de duas colunas para melhorar o aproveitamento do espaço da tela.
+
+O que é melhor deixar para depois:
+
+Migração para Tailwind ou bibliotecas de componentes (ShadcnUI).
+
+Modais ou sidebars para esconder os formulários (mantenha tudo na mesma tela em scroll vertical por enquanto).
+
+Skeleton loaders (mantenha o texto "Loading..." atual).
+
+O que NÃO deve ser alterado
+Sob hipótese alguma a proposta visual deve mexer nos seguintes itens para garantir a continuidade técnica:
+
+Gestão de Estado: Os useStates, useEffect e as lógicas dos handlers (handleCreatePet, refreshPets, etc.) dentro do page.tsx devem permanecer intocados.
+
+Contratos das Props: As interfaces EventSectionProps, PetSectionProps, etc., não devem receber novos argumentos nem perder os atuais.
+
+Lógica de Bloqueio (Guards): As lógicas enormes dentro dos disabled={...} dos botões, que garantem validação numérica e de data, não devem ser simplificadas ou alteradas.
+
+Consumo de API: A comunicação do lib/api.ts e a forma como os erros reais do backend são capturados e passados ao estado (err instanceof Error ? err.message : String(err)) devem ser rigidamente preservados.

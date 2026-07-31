@@ -1,0 +1,300 @@
+Read [](file:///c%3A/Users/Levi/Documents/projeto_gato/AGENTS.md#1-1), lines 1 to 40
+
+Read [](file:///c%3A/Users/Levi/Documents/projeto_gato/DIARIO_PROJETO.md#30-30), lines 30 to 60
+
+I have enough context. Here is the checklist.
+
+---
+
+## Pre-check (before opening the browser)
+
+Confirm all three are running before starting:
+
+- **Docker container** is up: `docker ps` shows `cuide-do-pet-db` in status `Up`
+- **Backend** is running at `http://localhost:3001`: `curl http://localhost:3001/health` returns `200`
+- **Frontend** is running at `http://localhost:3000`: `npm run dev` is active in web
+
+If any of the three is down, stop. The checklist cannot be completed and every flow will surface a red error box — which is correct behaviour, but not what you are testing here.
+
+---
+
+## Checklist
+
+### 1 — Shell / layout baseline
+
+Open `http://localhost:3000`.
+
+**Expected:**
+- Page renders with a white left sidebar (264px wide) bearing the "Cuide do Pet" logo and a PawPrint emerald icon
+- Four nav buttons are visible: Dashboard, Meus Pets, Gastos, Eventos
+- A "Adicionar Rápido" section appears at the bottom of the sidebar with four buttons: Novo Pet, Novo Evento, Novo Gasto, IA
+- A white top header bar is visible with a "Pet:" label on the left and an amber avatar circle on the right
+- The main content area has a light gray background (`bg-gray-50`) and is scrollable
+- Four sections are visible stacked vertically: Pets, Eventos, Gastos, Assistente IA
+
+**Pass signal:** all structural elements render without a blank white screen or unhandled error overlay.  
+**Fail signal:** blank page, missing sidebar, raw unstyled HTML, or console errors about `cn is not a function` or missing modules.
+
+---
+
+### 2 — Sidebar navigation scroll
+
+Click each of the four nav buttons in order: **Dashboard**, **Meus Pets**, **Eventos**, **Gastos**.
+
+**Expected per click:**
+- "Dashboard" → page scrolls smoothly to the very top (Pets section heading visible)
+- "Meus Pets" → scrolls to the Pets section heading
+- "Eventos" → scrolls to the Eventos section heading
+- "Gastos" → scrolls to the Gastos section heading
+
+**Pass signal:** smooth scroll occurs and the target section heading becomes visible at the top of the viewport.  
+**Fail signal:** nothing happens, page jumps without animation, or console shows `Cannot read properties of null (reading 'scrollIntoView')`.
+
+---
+
+### 3 — Quick Add scroll
+
+Click each of the four "Adicionar Rápido" buttons: **Novo Pet**, **Novo Evento**, **Novo Gasto**, **IA**.
+
+**Expected:** same smooth-scroll behaviour as nav buttons. No modal opens. The page scrolls to the relevant section's form, which is already visible inline.
+
+**Pass signal:** scrolls to the correct form and no modal/dialog appears.  
+**Fail signal:** modal opens, nothing happens, or page reloads.
+
+---
+
+### 4 — Header pet selector — empty state
+
+At this point no pets are created yet.
+
+**Expected:**
+- Pet selector shows "Nenhum pet cadastrado" (static text, no `<select>`)
+- No breed sub-label is shown
+
+**Pass signal:** text "Nenhum pet cadastrado" is visible where the select would be.  
+**Fail signal:** broken `<select>` with no options, or a JS error about `.find` on undefined.
+
+---
+
+### 5 — Pets section — empty state
+
+Look at the Pets section.
+
+**Expected:**
+- "Nenhum pet cadastrado." text in gray is visible (the `!loading && !error && pets.length === 0` branch)
+- No spinner (loading finished)
+- No red error box
+
+**Pass signal:** gray placeholder text is visible.  
+**Fail signal:** infinite spinner, red error box, or blank section.
+
+---
+
+### 6 — Pet creation — guard validation
+
+In the "Adicionar Pet" form, leave all fields empty and observe the "Criar Pet" button.
+
+**Expected:** button is visually disabled (gray background, `cursor-not-allowed`). Clicking it does nothing.
+
+Now fill only the "Nome" field with a value and observe.
+
+**Expected:** button remains disabled (other required fields are still empty).
+
+**Pass signal:** button stays gray until all required fields (nome, espécie, raça, data de nascimento, peso, userId) are filled with valid values.  
+**Fail signal:** button becomes active while required fields are empty, or clicking an empty form submits a request.
+
+---
+
+### 7 — Pet creation — full valid flow
+
+Fill in the Adicionar Pet form with valid data:
+- Nome: `Rex`
+- Espécie: `dog`
+- Raça: `Labrador`
+- Data de nascimento (ISO): `2020-05-10`
+- Peso (kg): `25`
+- Observações: `Loves water` *(optional, can be left blank)*
+- userId: any valid UUID, e.g. `00000000-0000-0000-0000-000000000001`
+
+Click **Criar Pet**.
+
+**Expected:**
+1. Button shows a `Loader2` spinner briefly while the request is in flight
+2. Green success box "Pet criado com sucesso." appears below the button
+3. All form fields reset to empty
+4. The pet list above the form updates and shows a `PetCard` for Rex with: name, weight in violet (`25.00 kg`), "DOG" badge, "Labrador" breed text, birthdate formatted as `10/05/2020`
+
+**Pass signal:** new card appears in the grid, form clears, green box shown.  
+**Fail signal:** red error box, form does not clear, or no card appears in the list.
+
+---
+
+### 8 — Header pet selector — after pet created
+
+After Rex was created, observe the header.
+
+**Expected:**
+- `<select>` is now visible with "— selecionar —" as the default option
+- "Rex (dog)" appears as an option
+- Selecting "Rex (dog)" shows "Labrador" as a sub-label next to the selector
+
+**Pass signal:** pet appears in the dropdown and selecting it shows the breed sub-label.  
+**Fail signal:** selector still shows "Nenhum pet cadastrado" or the dropdown is empty.
+
+---
+
+### 9 — State cleanup after editing Pet form
+
+After a successful pet creation (green success box visible), start editing any field in the form (e.g. type a character in "Nome").
+
+**Expected:** the green success box disappears immediately as you type.
+
+Now submit an intentionally invalid creation (e.g. set `userId` to `not-a-uuid`, fill all other fields, click Criar Pet). A red error box appears. Then start editing any field.
+
+**Expected:** the red error box disappears immediately as you type.
+
+**Pass signal:** both success and error boxes clear on the first keystroke in any field.  
+**Fail signal:** stale success/error box persists while editing.
+
+---
+
+### 10 — Events section — creation flow
+
+Scroll to the Eventos section. The pet selector `<select>` inside the form should already show Rex as an option (populated from the real `pets` state).
+
+Fill the form:
+- Pet: select Rex
+- Tipo: `VACCINE`
+- Descrição: `Rabies annual vaccine`
+- Data/hora (ISO): `2026-04-06T10:00:00.000Z`
+
+Click **Criar Evento**.
+
+**Expected:**
+1. Spinner briefly shown in button
+2. Green success box "Evento criado com sucesso." appears
+3. Form fields reset to empty / "— selecionar pet —"
+4. A new EventCard appears in the grid with: "VACCINE" badge (rose background, Syringe icon), description, date formatted as `06/04/2026`, and time `10:00`
+
+**Pass signal:** card appears with correct rose/Syringe styling.  
+**Fail signal:** red error box, card does not appear, or shows incorrect icon/color for VACCINE type.
+
+---
+
+### 11 — Events — unknown type fallback icon
+
+Create a second event with Tipo: `OBSERVATION` (does not match VACCINE, CHECKUP, VET, or CONSULT).
+
+**Expected:** the EventCard for OBSERVATION uses the default display: Eye icon with amber-50 background.
+
+**Pass signal:** amber Eye card shown.  
+**Fail signal:** missing icon, wrong color, or JS error.
+
+---
+
+### 12 — Expenses section — creation flow
+
+Scroll to the Gastos section. Fill the form:
+- userId: `00000000-0000-0000-0000-000000000001`
+- Item: `Ração Premium`
+- Categoria: `food`
+- Valor (R$): `189.90`
+- Quantidade: `15`
+- Unidade: `kg`
+- Data da compra (ISO): `2026-04-01T10:00:00.000Z`
+
+Click **Criar Gasto**.
+
+**Expected:**
+1. Spinner briefly shown
+2. Green success box "Gasto criado com sucesso." appears
+3. Form resets to empty
+4. New ExpenseCard appears with: "Ração Premium" as item name, `R$ 189.90` in emerald, "FOOD" badge, `15 kg`, `R$ 12.66/kg` (pricePerKg calculated by backend since unit is `kg`), and date `01/04/2026`
+5. Icon is ShoppingCart with green-50 background (matches `food` category)
+
+**Pass signal:** card shows correct pricePerKg and ShoppingCart/green icon.  
+**Fail signal:** pricePerKg missing or `null`, wrong icon, or error box.
+
+---
+
+### 13 — Expenses — non-kg unit (no pricePerKg)
+
+Create a second expense with Unidade: `un` (not `kg`), same other fields.
+
+**Expected:** ExpenseCard appears but the `R$ X.XX/kg` line is absent (because `unit !== 'kg'`, so backend returns `pricePerKg: null`).
+
+**Pass signal:** card renders without the pricePerKg line.  
+**Fail signal:** pricePerKg line shows `R$ NaN/kg` or `null`.
+
+---
+
+### 14 — AI Interpret flow
+
+Scroll to the "Assistente IA" section. The textarea has a placeholder in Portuguese. Both buttons ("Interpretar" and "Executar") must be visible.
+
+Leave the textarea empty and verify:
+- Both buttons are gray/disabled
+
+Type a message: `Floquinho tomou vacina hoje às 10h`
+
+Click **Interpretar**.
+
+**Expected:**
+1. Only the "Interpretar" button shows a spinner; "Executar" button does not spin
+2. A result card appears with an `executionType` badge (emerald "Criado com sucesso" / amber "Confirmação necessária" / red "Não suportado" depending on AI response)
+3. The raw `executionType` backend value is shown as a sub-label below the human label
+4. `intent` and `confidence` are visible next to the badge
+5. `assistantMessage` is shown if truthy
+6. `missingFields` amber box is shown only if `missingFields.length > 0`
+7. `requiresConfirmation` and `executed` are in a 2-col grid
+8. `createdRecord` pre-block is shown only if present
+
+**Pass signal:** result card renders with all non-null fields visible. No event is actually created in the Events list (Interpret does not execute).  
+**Fail signal:** error box from backend/AI provider, spinner never stops, or Events list gains a new entry after Interpret.
+
+---
+
+### 15 — AI Execute flow
+
+With the same or a new message, click **Executar**.
+
+**Expected:**
+1. Only the "Executar" button shows a spinner
+2. Result card appears
+3. If the message was parseable as a complete event/expense: `executionType` is `created`, `executed` is `true`, `createdRecord` is visible in the `<pre>` block, and the corresponding Events or Expenses list gains a new entry on the page
+4. If fields were missing: `executionType` is `confirmation_required`, `executed` is `false`, `createdRecord` is absent, and no new entry appears in the lists
+
+**Pass signal:** `executed` value matches actual list update (either a real new card in Events/Expenses, or no new card with `executed: false`).  
+**Fail signal:** `executed: true` but no new card, or `executed: false` but a new card appears.
+
+---
+
+### 16 — Honest error display
+
+With the backend stopped (kill the NestJS process), reload the page.
+
+**Expected:**
+- Pets, Events, and Expenses sections each show a red error box: "Erro: API request failed (/pets) - HTTP…" or similar
+- No section silently shows an empty list as if the fetch succeeded
+- No section shows a spinner forever
+
+Restart the backend. Reload the page.
+
+**Expected:** all three sections load correctly again.
+
+**Pass signal:** real error text is visible when backend is down. No fake empty state.  
+**Fail signal:** empty list shown silently, spinner never stops, or generic "something went wrong" without the actual error message.
+
+---
+
+## What to report back
+
+After completing the checklist, report:
+
+1. **Each item number** and whether it **passed or failed**
+2. For any **failure**: the exact text of any error message shown (red box, console error, or network tab failure)
+3. The **HTTP status and body** of any failed API call (visible in browser DevTools → Network tab)
+4. Whether **pricePerKg** appeared correctly on the `kg` expense card (item 12)
+5. Whether **Interpretar** triggered a list update that it should not have (item 14)
+6. Whether **Executar** result matched the list state (item 15)
+7. Any visual inconsistency not covered above (e.g. scroll not working, card layout broken on a narrow viewport, spinner stuck)
